@@ -1,4 +1,6 @@
 <?php
+
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DriverController;
@@ -42,3 +44,7 @@ Route::get('/passenger', [PassengerController::class, 'passengerDashboard'])->na
 Route::get('/reservations', [PassengerController::class, 'reservationDashboard'])->name('bookings');
 Route::get('/reservations', [PassengerController::class, 'readDrivers'])->name('bookings');
 Route::post('/reservations', [PassengerController::class, 'createReservation'])->name('bookings');
+
+
+// admin
+Route::get('/admin', [AdminController::class, 'admin'])->name('admin');
