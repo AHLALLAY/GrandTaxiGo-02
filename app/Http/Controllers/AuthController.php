@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Driver;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
+use Laravel\Socialite\Facades\Socialite;
+
+use Exception;
 
 class AuthController extends Controller
 {
@@ -84,5 +87,50 @@ class AuthController extends Controller
 
         $request->session()->regenerateToken();
         return redirect()->route('loginForm')->with('success', 'Déconnexion réussie !');
+    }
+
+    public function redirectToGoogle(){
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function handleGoogleCallback()
+    {
+        try {
+            // Récupérer les détails de l'utilisateur depuis Google
+            $googleUser = Socialite::driver('google')->user();
+    
+            // Vérifier si l'utilisateur existe déjà dans la base de données
+            $user = User::where('email', $googleUser->email)->first();
+    
+            // Si l'utilisateur n'existe pas, le créer
+            if (!$user) {
+                $user = User::create([
+                    'name' => $googleUser->name,
+                    'email' => $googleUser->email,
+                    'password' => Hash::make(rand(10000000, 99999999)), // Mot de passe aléatoire
+                    'photo' => $googleUser->avatar,
+                    'role' => 'passenger', // Rôle par défaut pour les nouveaux utilisateurs
+                ]);
+            }
+    
+            // Connecter l'utilisateur
+            Auth::login($user);
+    
+            // Rediriger en fonction du rôle de l'utilisateur
+            switch ($user->role) {
+                case 'driver':
+                    return redirect()->route('driver')->with('success', 'Connexion réussie !');
+                case 'passenger':
+                    return redirect()->route('passenger')->with('success', 'Connexion réussie !');
+                case 'admin':
+                    return redirect()->route('admin.dashboard')->with('success', 'Connexion réussie !');
+                default:
+                    return redirect('/')->with('success', 'Connexion réussie !');
+            }
+    
+        } catch (Exception $e) {
+            // Gérer les erreurs
+            return redirect()->route('login')->withErrors('La connexion via Google a échoué. Veuillez réessayer.');
+        }
     }
 }
