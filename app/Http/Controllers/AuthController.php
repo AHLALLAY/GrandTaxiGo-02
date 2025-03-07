@@ -6,13 +6,18 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Session;
 use Laravel\Socialite\Facades\Socialite;
-
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WelcomeEmail;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class AuthController extends Controller
 {
+    /**
+     * Gère la connexion de l'utilisateur.
+     */
     public function login(Request $request)
     {
         // Validation des données
@@ -21,103 +26,119 @@ class AuthController extends Controller
             'password' => 'required|string|min:8',
         ]);
 
-        // Recherche de l'utilisateur dans la table users
+        // Recherche de l'utilisateur dans la base de données
         $user = User::where('email', $request->email)->first();
+        dd($user);
 
         // Vérification du mot de passe et de l'existence de l'utilisateur
         if ($user && Hash::check($request->password, $user->password)) {
-            // Stocker l'utilisateur en session
-            Session::put('user', $user);
+            // Authentification de l'utilisateur
+            Auth::login($user);
 
             // Redirection en fonction du rôle
-            switch ($user->role) {
+            switch ($user->roles) {
                 case 'admin':
-                    return redirect()->route('admin.dashboard')->with('success', 'Connexion réussie !');
+                    return redirect()->route('admin')->with('success', 'Connexion réussie !');
                 case 'driver':
                     return redirect()->route('driver')->with('success', 'Connexion réussie !');
                 case 'passenger':
                     return redirect()->route('passenger')->with('success', 'Connexion réussie !');
                 default:
-                    return redirect('login')->withErrors(['error' => 'Rôle non reconnu.']);
+                    return redirect()->route('loginForm')->withErrors(['error' => 'Rôle non reconnu.']);
             }
         } else {
             // Si l'authentification échoue
-            return redirect('login')->withErrors(['error' => 'Email ou mot de passe incorrect.']);
+            return redirect()->route('loginForm')->withErrors(['error' => 'Email ou mot de passe incorrect.']);
         }
     }
 
     public function register(Request $request)
     {
         // Validation des données
-        $request->validate([
-            'photo' => 'required|image|mimes:jpeg,jpg,png|max:2028',
+        $validatedData = $request->validate([
+            'photo' => 'required|image|mimes:jpeg,jpg,png|max:5028',
             'name' => 'required|string|max:100',
             'email' => 'required|string|email|max:100|unique:users,email',
             'password' => 'required|string|min:8',
             'role' => 'nullable|string|in:passenger,driver',
         ]);
 
+        // Détermination du rôle
+        $role = $this->determineRole($validatedData['name'], $validatedData['role'] ?? null);
 
-        $role = $request->role;
-        if (substr($request->name, -2) === '-a' && !$request->role) {
-            $role = 'admin';
+        // Téléchargement de la photo
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('uploads', 'public');
+            if (!$photoPath) {
+                return back()->withErrors(['photo' => 'Erreur lors du téléchargement de l\'image.']);
+            }
+        } else {
+            return back()->withErrors(['photo' => 'Aucun fichier téléchargé.']);
         }
 
-
-        $photoPath = $request->file('photo')->store('uploads', 'public');
-        $passHashed = Hash::make($request->password);
-
-
+        // Création de l'utilisateur
         User::create([
             'photo' => $photoPath,
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => $passHashed,
-            'role' => $role,
+            'name' => $this->formatName($validatedData['name']),
+            'email' => $validatedData['email'],
+            'password' => Hash::make($validatedData['password']),
+            'roles' => $role,
             'isAvailable' => $role === 'driver' ? true : null,
         ]);
 
-        return redirect()->route('loginForm');
+        return redirect()->route('loginForm')->with('success', 'Inscription réussie !');
     }
 
+    /**
+     * Gère la déconnexion de l'utilisateur.
+     */
     public function logout(Request $request)
     {
-        Session::forget('user');
-        Session::forget('driver');
-
+        Auth::logout();
+        $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect()->route('loginForm')->with('success', 'Déconnexion réussie !');
     }
 
-    public function redirectToGoogle(){
+    /**
+     * Redirige l'utilisateur vers Google pour l'authentification.
+     */
+    public function redirectToGoogle()
+    {
         return Socialite::driver('google')->redirect();
     }
 
+    /**
+     * Gère le callback de l'authentification Google.
+     */
     public function handleGoogleCallback()
     {
         try {
             // Récupérer les détails de l'utilisateur depuis Google
             $googleUser = Socialite::driver('google')->user();
-    
+
             // Vérifier si l'utilisateur existe déjà dans la base de données
             $user = User::where('email', $googleUser->email)->first();
-    
+
             // Si l'utilisateur n'existe pas, le créer
             if (!$user) {
                 $user = User::create([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
-                    'password' => Hash::make(rand(10000000, 99999999)), // Mot de passe aléatoire
+                    'password' => Hash::make(Str::random(16)),
                     'photo' => $googleUser->avatar,
-                    'role' => 'passenger', // Rôle par défaut pour les nouveaux utilisateurs
+                    'roles' => 'passenger',
                 ]);
             }
-    
+
             // Connecter l'utilisateur
             Auth::login($user);
-    
+
+            // Envoyer un email de bienvenue
+            Mail::to($user->email)->send(new WelcomeEmail($user));
+
             // Rediriger en fonction du rôle de l'utilisateur
-            switch ($user->role) {
+            switch ($user->roles) {
                 case 'driver':
                     return redirect()->route('driver')->with('success', 'Connexion réussie !');
                 case 'passenger':
@@ -127,10 +148,34 @@ class AuthController extends Controller
                 default:
                     return redirect('/')->with('success', 'Connexion réussie !');
             }
-    
         } catch (Exception $e) {
-            // Gérer les erreurs
-            return redirect()->route('login')->withErrors('La connexion via Google a échoué. Veuillez réessayer.');
+            // Enregistrer l'erreur dans les logs
+            Log::error('Erreur lors de la connexion via Google : ' . $e->getMessage());
+
+            // Rediriger avec un message d'erreur
+            return redirect()->route('loginForm')->withErrors('La connexion via Google a échoué. Veuillez réessayer.');
         }
+    }
+
+    /**
+     * Détermine le rôle de l'utilisateur.
+     */
+    private function determineRole($name, $requestRole)
+    {
+        if (substr($name, -2) === '-a') {
+            return 'admin';
+        }
+        return $requestRole ?? 'passenger';
+    }
+
+    /**
+     * Formate le nom de l'utilisateur.
+     */
+    private function formatName($name)
+    {
+        if (strpos($name, '-') !== false) {
+            return substr($name, 0, strpos($name, '-'));
+        }
+        return $name;
     }
 }
