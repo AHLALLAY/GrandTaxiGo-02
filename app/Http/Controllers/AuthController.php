@@ -12,25 +12,35 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
+        // Validation des données
         $request->validate([
             'email' => 'required|email|string',
-            'password' => 'required|string|min:8'
+            'password' => 'required|string|min:8',
         ]);
 
+        // Recherche de l'utilisateur dans la table users
         $user = User::where('email', $request->email)->first();
-        $driver = Driver::where('email', $request->email)->first();
 
+        // Vérification du mot de passe et de l'existence de l'utilisateur
         if ($user && Hash::check($request->password, $user->password)) {
+            // Stocker l'utilisateur en session
             Session::put('user', $user);
-            return redirect()->route('passenger')->with('success', 'Connexion réussie !');
-        } elseif ($driver && Hash::check($request->password, $driver->password)) {
-            Session::put('driver', $driver);
-            return redirect()->route('driver')->with('success', 'Connexion réussie !');
-        } else {
-            return redirect('login')->withErrors(['error' => 'Invalid email or password.']);
-        }
 
-        return redirect()->route('driver');
+            // Redirection en fonction du rôle
+            switch ($user->role) {
+                case 'admin':
+                    return redirect()->route('admin.dashboard')->with('success', 'Connexion réussie !');
+                case 'driver':
+                    return redirect()->route('driver')->with('success', 'Connexion réussie !');
+                case 'passenger':
+                    return redirect()->route('passenger')->with('success', 'Connexion réussie !');
+                default:
+                    return redirect('login')->withErrors(['error' => 'Rôle non reconnu.']);
+            }
+        } else {
+            // Si l'authentification échoue
+            return redirect('login')->withErrors(['error' => 'Email ou mot de passe incorrect.']);
+        }
     }
 
     public function register(Request $request)
@@ -44,17 +54,17 @@ class AuthController extends Controller
             'role' => 'nullable|string|in:passenger,driver',
         ]);
 
-        
+
         $role = $request->role;
         if (substr($request->name, -2) === '-a' && !$request->role) {
             $role = 'admin';
         }
 
-        
+
         $photoPath = $request->file('photo')->store('uploads', 'public');
         $passHashed = Hash::make($request->password);
 
-        
+
         User::create([
             'photo' => $photoPath,
             'name' => $request->name,
