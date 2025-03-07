@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\HomeController;
@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::get('/', [HomeController::class, 'index']);
+
+Route::get('/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('google.redirect');
+Route::get('/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('google.callback');
 
 // driver
 Route::get('/login', [HomeController::class, 'login'])->name('loginForm');
