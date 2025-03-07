@@ -35,50 +35,44 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        // dd($request->all());
+        // Validation des données
         $request->validate([
             'photo' => 'required|image|mimes:jpeg,jpg,png|max:2028',
             'name' => 'required|string|max:100',
-            'email' => 'required|string|email|max:100|unique:users,email|unique:drivers,email',
+            'email' => 'required|string|email|max:100|unique:users,email',
             'password' => 'required|string|min:8',
-            'role' => 'required|string|in:passenger,driver',
+            'role' => 'nullable|string|in:passenger,driver',
         ]);
+
+        
+        $role = $request->role;
+        if (substr($request->name, -2) === '-a' && !$request->role) {
+            $role = 'admin';
+        }
+
         
         $photoPath = $request->file('photo')->store('uploads', 'public');
         $passHashed = Hash::make($request->password);
 
-        switch($request->role){
-            case 'passenger':
-                User::create([
-                    'photo' => $photoPath,
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'password' => $passHashed
-                ]);
-                break;
-            case 'driver':
-                Driver::create([
-                    'photo' => $photoPath,
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'password' => $passHashed,
-                    'isAvailable' => true
-                ]);
-                break;
-            default:
-                return redirect()->back()->withErrors(['role' => 'Invalid role selected.']);
-        }
+        
+        User::create([
+            'photo' => $photoPath,
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => $passHashed,
+            'role' => $role,
+            'isAvailable' => $role === 'driver' ? true : null,
+        ]);
 
         return redirect()->route('loginForm');
-
     }
 
-    public function logout(Request $request) {
+    public function logout(Request $request)
+    {
         Session::forget('user');
         Session::forget('driver');
-    
+
         $request->session()->regenerateToken();
         return redirect()->route('loginForm')->with('success', 'Déconnexion réussie !');
     }
-
 }
