@@ -3,54 +3,39 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class WelcomeMail extends Mailable
+class WelcomeEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $msg, $subject;
+    public $user;
 
     /**
      * Create a new message instance.
-     */
-    public function __construct($msg, $subject)
-    {
-        $this->msg = $msg;
-        $this->subject = $subject;
-    }
-
-    /**
-     * Get the message envelope.
-     */
-    public function envelope(): Envelope
-    {
-        return new Envelope(
-            subject:  $this->subject,
-        );
-    }
-
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        return new Content(
-            view: 'email',
-        );
-    }
-
-    /**
-     * Get the attachments for the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @param $user
+     * @return void
      */
-    public function attachments(): array
+    public function __construct($user)
     {
-        return [];
+        $this->user = $user;
+    }
+
+    /**
+     * Build the message.
+     *
+     * @return $this
+     */
+    public function build()
+    {
+        return $this->view('emails.welcome')
+                    ->with([
+                        'username' => $this->user->name,
+                        'email' => $this->user->email,
+                        'password' => $this->user->password,
+                    ])
+                    ->subject('Bienvenue sur notre plateforme');
     }
 }
