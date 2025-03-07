@@ -55,17 +55,15 @@
             <div class="p-4">
                 <!-- Profil utilisateur -->
                 <div class="flex flex-col items-center p-4 mb-6 border-b border-gray-200">
+                    @if(session()->has('user'))
                     <div class="ring-2 ring-indigo-600 rounded-full mb-3">
-                        @if(session()->has('user'))
-                        <img src="{{ asset('storage/' . session('user')->photo) }}" alt="Photo de l'utilisateur" class="w-16 h-16 rounded-full object-cover">
-                        @else
-                        <img src="{{ asset('images/default-avatar.png') }}" alt="Photo par défaut" class="w-16 h-16 rounded-full object-cover">
-                        @endif
+                        <img src="{{ asset('storage/' . session('user')->photo) }}" alt="Photo de profil" class="w-16 h-16 rounded-full object-cover">
                     </div>
                     <h4 class="font-semibold text-gray-800">
-                        @if(session()->has('user')) {{ session('user')->name }} @endif
+                        {{ session('user')->name }}
                     </h4>
-                    <p class="text-gray-500 text-sm">Passager</p>
+                    <p class="text-gray-500 text-sm">{{ session('user')->roles }} </p>
+                    @endif
                 </div>
 
                 <!-- Menu de navigation -->
@@ -88,151 +86,7 @@
             </div>
         </aside>
 
-        <!-- Contenu principal -->
-        <main class="md:ml-64 flex-grow p-6">
-            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                    <i class="fas fa-tachometer-alt text-indigo-600 mr-2"></i>
-                    Tableau de Bord Passager
-                </h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <!-- Statistiques -->
-                    <div class="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg shadow-lg p-4 text-white">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-indigo-200 text-sm">Voyages</p>
-                                <h3 class="text-3xl font-bold">16</h3>
-                            </div>
-                            <div class="bg-indigo-500 rounded-full p-3">
-                                <i class="fas fa-route text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-4 text-white">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-green-200 text-sm">Économies</p>
-                                <h3 class="text-3xl font-bold">420 DH</h3>
-                            </div>
-                            <div class="bg-green-500 rounded-full p-3">
-                                <i class="fas fa-coins text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-4 text-white">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-blue-200 text-sm">Conducteurs</p>
-                                <h3 class="text-3xl font-bold">9</h3>
-                            </div>
-                            <div class="bg-blue-500 rounded-full p-3">
-                                <i class="fas fa-user-tie text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-amber-600 to-amber-700 rounded-lg shadow-lg p-4 text-white">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-amber-200 text-sm">Réservations actives</p>
-                                <h3 class="text-3xl font-bold">2</h3>
-                            </div>
-                            <div class="bg-amber-500 rounded-full p-3">
-                                <i class="fas fa-calendar-check text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Actions principales -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-search-location text-indigo-600 mr-2"></i>
-                        Trouver un trajet
-                    </h3>
-                    <div class="space-y-4">
-                        <form action="" method="post">
-                            @csrf
-                            <div class="mb-4">
-                                <label for="depart" class="block text-sm font-medium text-gray-700">Départ</label>
-                                <select name="depart" id="depart" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                    <option value="default">Sélectionnez une ville de départ</option>
-                                    <?php
-                                    $villesMaroc = ["Agadir","Al Hoceïma","Azrou","Beni Mellal","Berkane","Casablanca",
-                                                    "Chefchaouen","El Jadida","Errachidia","Essaouira","Fès","Guelmim",
-                                                    "Ifrane","Kenitra","Khouribga","Laâyoune","Marrakech","Meknès",
-                                                    "Mohammédia","Nador","Ouarzazate","Oujda","Rabat","Safi","Salé",
-                                                    "Settat","Tanger","Taza","Tétouan","Tiznit"
-                                                    ];
-                                    foreach ($villesMaroc as $ville) {
-                                        echo "<option value='$ville'>$ville</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                            <div class="mb-4">
-                                <label for="destination" class="block text-sm font-medium text-gray-700">Destination</label>
-                                <select name="destination" id="destination" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                    <option value="default">Sélectionnez une ville de destination</option>
-                                    <?php
-                                    foreach ($villesMaroc as $ville) {
-                                        echo "<option value='$ville'>$ville</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                            <div class="mb-4">
-                                <label for="date" class="block text-sm font-medium text-gray-700">Date du voyage</label>
-                                <input type="date" name="date" id="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            </div>
-                            <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                                <i class="fas fa-search mr-2"></i>Rechercher
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-bookmark text-indigo-600 mr-2"></i>
-                        Mes réservations
-                    </h3>
-                    <div class="space-y-4">
-                        <div class="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="font-semibold text-gray-800">Casablanca → Marrakech</h4>
-                                    <p class="text-sm text-gray-600"><i class="far fa-calendar mr-1"></i> 15 Mars 2025, 08:30</p>
-                                    <p class="text-sm text-gray-600"><i class="fas fa-user-tie mr-1"></i> Mohamed A.</p>
-                                </div>
-                                <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Confirmé</span>
-                            </div>
-                        </div>
-                        <div class="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="font-semibold text-gray-800">Rabat → Tanger</h4>
-                                    <p class="text-sm text-gray-600"><i class="far fa-calendar mr-1"></i> 22 Mars 2025, 14:00</p>
-                                    <p class="text-sm text-gray-600"><i class="fas fa-user-tie mr-1"></i> Karim B.</p>
-                                </div>
-                                <span class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">En attente</span>
-                            </div>
-                        </div>
-                        <form action="{{ route('bookings') }}">
-                            <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                                <i class="fas fa-list-ul mr-2"></i>
-                                Voir toutes mes réservations
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>            
-        </main>
     </div>
 
     <script src="{{ asset ('js/mobile_menu.js') }}"></script>
