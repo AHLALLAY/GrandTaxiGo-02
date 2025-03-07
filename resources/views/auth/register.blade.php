@@ -59,12 +59,11 @@
         <div class="max-w-3xl w-full mx-auto py-8 px-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
             <form method="POST" action="{{ route('registerAction') }}" enctype="multipart/form-data" class="space-y-6">
                 @csrf
-                
                 <!-- Div principal contenant l'avatar et les champs -->
                 <div class="flex flex-col md:flex-row gap-6">
                     <!-- Div contenant l'avatar -->
-                    <div class="md:w-1/3 flex justify-center">
-                        <div class="text-center">
+                    <div class="md:w-1/3 flex justify-center items-center">
+                        <div>
                             <div class="relative mx-auto w-36 h-36 mb-3">
                                 <div class="w-36 h-36 rounded-full bg-gray-200 dark:bg-gray-700 border-4 border-white dark:border-gray-800 overflow-hidden flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300">
                                     <div id="photo-placeholder" class="text-gray-500 dark:text-gray-400">
@@ -156,7 +155,7 @@
 
                 <!-- Div séparé pour le Sign in with Google -->
                 <div class="mt-6 text-center pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <a href="" class="inline-block bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 transition duration-300 transform hover:scale-105">
+                    <a href="{{ route('google.redirect') }}" class="inline-block bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 transition duration-300 transform hover:scale-105">
                         <i class="fab fa-google mr-2"></i>Sign in with Google
                     </a>
                 </div>
