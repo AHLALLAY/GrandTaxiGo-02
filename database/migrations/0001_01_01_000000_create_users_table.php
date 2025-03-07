@@ -15,7 +15,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('roles')->default('passenger');
+            $table->string('roles');
+            $table->string('isAvailable')->default(true);
+            $table->string('google_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
